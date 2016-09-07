@@ -1,0 +1,15 @@
+{
+  "name": "DoorServer",
+  "version": "0.0.1",
+  "description": "Home Gateway Door Server API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Goodlab",
+  "license": "MIT",
+  "dependencies": {
+    "exec": "^0.2.1",
+    "express": "^4.14.0"
+  }
+}
