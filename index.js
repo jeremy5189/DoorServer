@@ -1,6 +1,9 @@
 var express = require('express');
 var app = express();
 
+// Init GPIO
+run_cmd('./scripts/init.sh', [], function(){});
+
 app.get('/', function (req, res) {
   res.send('Hello World!');
 });
