@@ -7,10 +7,32 @@ import hashlib
 import json
 import time
 
-# initialize the Processor
-device = '/dev/video0'
-url = 'http://192.168.10.131:8000'
+device   = '/dev/video0'
+url      = 'http://gateway.patricks.tw'
+door_url = 'http://localhost:3000'
+doc_root = '/home/pi/DoorServer/'
 
+def play_sound(str):
+	call(["aplay", doc_root + 'sound/' + str + '.wav'])
+
+def http_get(url_query, header, param):
+	
+	response = None
+
+	try:
+	
+		# Send HTTP Request
+		response = unirest.get(url_query, headers=header, params=param)
+
+	except: 
+		
+		print('Network Error in API Call')
+		play_sound('network_error')
+
+
+	return response
+
+# Show preview window in X Server
 preview = False
 if len(sys.argv) > 1:
 	preview = True
@@ -21,9 +43,11 @@ proc = zbar.Processor()
 # configure the Processor
 proc.parse_config('enable')
 
+# init
 proc.init(device)
+play_sound('init_qr')
 
-
+# loop
 while True:
 
 	# enable the preview window
@@ -31,7 +55,7 @@ while True:
 		proc.visible = True
 
 	# read at least one barcode (or until window closed)
-	print 'Waiting for QR Code...'
+	print('Waiting for QR Code...')
 	proc.process_one()
 
 	# hide the preview window
@@ -39,29 +63,42 @@ while True:
 		proc.visible = False
 
 	# extract results
-	for symbol in proc.results:
+	symbol = None
+	for sym in proc.results:
+		symbol = sym	
+
+	print('decoded', symbol.type, 'symbol', '"%s"' % symbol.data)
+
+	response = http_get(url + '/api/query', {}, {
+		'qr_code' : symbol.data,
+		'checksum': hashlib.sha1('GoodWeb' + symbol.data).hexdigest()
+ 	})
+
+	# Network Error, skip this loop
+	if response == None:
+		continue
+   
+	print('API RESP')
+	print(response.body)
+
+
+	if response.body['status']:
+
+		print('Trigger Door Lock')
+		play_sound('access_granted')
+
+		# Unlock
+		http_get(door_url + '/unlock', {}, {})
+
+		# wait in seconds
+		time.sleep(3)
 		
-		# do something useful with results
-		print 'decoded', symbol.type, 'symbol', '"%s"' % symbol.data
+		# lock
+		http_get(door_url + '/lock', {}, {})
 
-		# Send HTTP Request
-		response = unirest.get(url + "/api/query", headers={}, params={ "qr_code": symbol.data, "checksum": hashlib.sha1('GoodWeb'+ symbol.data).hexdigest()})
-	
-		print 'API RESP'
-		print response.body
-		print response.body['status']
+	else:
 
-		if response.body['status']:
+		print('Access Denied')
+		play_sound('access_denied')
 
-			print 'Trigger Door Lock'
-
-			# Unlock
-			door = unirest.get('http://localhost:3000/unlock', headers={}, params={})
-
-			time.sleep(3)
-
-			door = unirest.get('http://localhost:3000/lock', headers={}, params={})
-
-		else:
-
-			call(["aplay", "/home/pi/pifm/sound.wav"])
+	break
