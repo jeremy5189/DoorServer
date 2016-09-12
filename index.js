@@ -1,8 +1,12 @@
 var express = require('express');
 var app = express();
 
+var doc_root = '/home/pi/DoorServer';
+
 // Init GPIO
-run_cmd('./scripts/init.sh', [], function(){});
+run_cmd( doc_root + '/scripts/init.sh', [], function(){});
+run_cmd( doc_root + '/scripts/lock.sh', [], function(){});
+run_cmd('aplay', ['/home/pi/DoorServer/sound/init_lock.wav'], function(){});
 
 app.get('/', function (req, res) {
   res.send('Hello World!');
@@ -42,14 +46,14 @@ app.get('/photo', function(req, res) {
 app.get('/lock', function(req, res) {
   console.log('GET /lock '+ req.ip);
 
-  run_cmd('./scripts/lock.sh', [], function(output) {
+  run_cmd(doc_root + '/scripts/lock.sh', [], function(output) {
     res.send({status: 1});
   });
 });
 
 app.get('/unlock', function(req, res) {
   console.log('GET /unlock ' + req.ip);
-  run_cmd('./scripts/unlock.sh', [], function(output) {
+  run_cmd(doc_root + '/scripts/unlock.sh', [], function(output) {
     res.send({status: 0});
   });
 });
@@ -57,7 +61,7 @@ app.get('/unlock', function(req, res) {
 app.get('/status', function(req, res) {
   console.log('GET /status ' + req.ip);
 
-  run_cmd('./scripts/status.sh', [], function(output) {
+  run_cmd(doc_root + '/scripts/status.sh', [], function(output) {
     var ret = parseInt(output.replace("\n", '').replace(" ", ""));
     console.log('status = ' + ret);
     res.send({
