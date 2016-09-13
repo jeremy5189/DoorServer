@@ -58,6 +58,10 @@ while True:
 	print('Waiting for QR Code...')
 	proc.process_one()
 
+	# Capture photo
+	photo = http_get(door_url + '/photo?event=open', {}, {})
+	print('name = ' + photo.body['name'])
+
 	# hide the preview window
 	if (preview):
 		proc.visible = False
@@ -101,4 +105,3 @@ while True:
 		print('Access Denied')
 		play_sound('access_denied')
 
-	break

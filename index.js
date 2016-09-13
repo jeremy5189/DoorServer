@@ -13,9 +13,22 @@ app.get('/', function (req, res) {
 });
 
 app.get('/photo', function(req, res) {
+  
   console.log('GET /photo ' + req.ip);
 
-  var fn = '/tmp/' + (new Date().getTime()) + '.jpg';
+  var event = null;
+  if( req.query.event != undefined )
+	event = req.query.event;
+
+  var fn, ts = (new Date().getTime()) + '.jpg';
+  
+  if( event == 'open' ) {
+    console.log('event == open');
+    fn = doc_root + '/photo/' + event + '/' + ts;
+  } else {
+    fn = '/tmp/' + ts;
+  }
+
   console.log(fn);
   run_cmd('raspistill', [
     '-o',
@@ -31,15 +44,17 @@ app.get('/photo', function(req, res) {
 
     console.log('Photo done');
 
-    var fs  = require('fs');
-    var img = fs.readFileSync(fn);
-    res.writeHead(200, {'Content-Type': 'image/jpeg' });
-    res.end(img, 'binary'); 
+	if(event == null) {
+    	var fs  = require('fs');
+    	var img = fs.readFileSync(fn);
+    	res.writeHead(200, {'Content-Type': 'image/jpeg' });
+    	res.end(img, 'binary'); 
 
-    console.log('rm ' + fn);
-//    run_cmd('rm', [fn], function() {});
-
+    	console.log('rm ' + fn);
+    }
   });
+
+  res.send({name: ts});
 
 });
 
