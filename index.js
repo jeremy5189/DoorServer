@@ -5,31 +5,50 @@ var doc_root = '/home/pi/DoorServer';
 
 // Init GPIO
 run_cmd( doc_root + '/scripts/init.sh', [], function(){});
+
+// Lock on Init
 run_cmd( doc_root + '/scripts/lock.sh', [], function(){});
+
+// Play Init Sound
 run_cmd('aplay', ['/home/pi/DoorServer/sound/init_lock.wav'], function(){});
 
 app.get('/', function (req, res) {
-  res.send('Hello World!');
+  res.send('Hello Home Gateway Lock Server');
+});
+
+app.get('/photo/:event/:timestamp', function(req, res) {
+  var event 		= req.params.event,
+	 timestamp    = req.params.timestamp;
+
+  console.log(event);
+  console.log(timestamp);
+
+  var fs  = require('fs');
+  var img = fs.readFileSync(doc_root + '/photo/' + event + '/' + timestamp + '.jpg');
+  res.writeHead(200, {'Content-Type': 'image/jpeg' });
+  res.end(img, 'binary'); 
+  
 });
 
 app.get('/photo', function(req, res) {
   
   console.log('GET /photo ' + req.ip);
 
+  // If event == open then dont return photo in res
   var event = null;
   if( req.query.event != undefined )
 	event = req.query.event;
 
-  var fn, ts = (new Date().getTime()) + '.jpg';
+  var fn, ts = (new Date().getTime());
   
   if( event == 'open' ) {
     console.log('event == open');
-    fn = doc_root + '/photo/' + event + '/' + ts;
+    fn = doc_root + '/photo/' + event + '/' + ts + '.jpg';
   } else {
-    fn = '/tmp/' + ts;
+    fn = '/tmp/' + ts + '.jpg';
   }
 
-  console.log(fn);
+  console.log('fn = ' + fn);
   run_cmd('raspistill', [
     '-o',
     fn,
@@ -45,17 +64,14 @@ app.get('/photo', function(req, res) {
     console.log('Photo done');
 
 	if(event == null) {
-    	var fs  = require('fs');
-    	var img = fs.readFileSync(fn);
-    	res.writeHead(200, {'Content-Type': 'image/jpeg' });
-    	res.end(img, 'binary'); 
-
-    	console.log('rm ' + fn);
-    }
+	    	var fs  = require('fs');
+	    	var img = fs.readFileSync(fn);
+	    	res.writeHead(200, {'Content-Type': 'image/jpeg' });
+	    	res.end(img, 'binary'); 
+        }
+  
   });
-
   res.send({name: ts});
-
 });
 
 app.get('/lock', function(req, res) {

@@ -60,7 +60,7 @@ while True:
 
 	# Capture photo
 	photo = http_get(door_url + '/photo?event=open', {}, {})
-	print('name = ' + photo.body['name'])
+	print('name = ' + str(photo.body['name']))
 
 	# hide the preview window
 	if (preview):
